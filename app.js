@@ -1,173 +1,67 @@
-let boxes = document.querySelectorAll(".box");
-let resetBtn = document.querySelector("#reset-btn");
+<!DOCTYPE html>
+<html lang="en">
 
-let turnX = true; // Human
-let gameOver = false;
-let totalCount = 0;
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BrainMove</title>
+    <link rel="stylesheet" href="style.css">
+</head>
 
-let board = Array(9).fill(null);
+<body>
 
-let human = "X";
-let ai = "O";
+   <!-- First Move Selector Popup -->
+    <div id="starter-popup" class="popup">
+        <h2>Who plays first?</h2>
+        <div class="popup-buttons">
+            <button id="human-first">You Play First (X)</button>
+            <button id="ai-first">AI Plays First (X)</button>
+        </div>
+    </div>
 
-let X = {
-    row: [0, 0, 0],
-    col: [0, 0, 0],
-    diag: 0,
-    antiDiag: 0
-};
+    <h1>BrainMove - You Can't Defeat Me!</h1>
 
-let O = {
-    row: [0, 0, 0],
-    col: [0, 0, 0],
-    diag: 0,
-    antiDiag: 0
-};
+    <div class="owner-info">
+        <p><strong>Developed by:</strong> Debasish Das</p>
+        <p><strong>Email:</strong> debasishdas1708@gmail.com</p>
+        <p><strong>Mobile:</strong> +91 7815030574</p>
+    </div>
 
-// ✅ Update row/col/diagonal counters
-function makeMove(symbol, index) {
-    const player = symbol === "X" ? X : O;
+    <div class="game-container">
+        <div class="board-wrapper">
+            <div class="game">
+                <button class="box"></button>
+                <button class="box"></button>
+                <button class="box"></button>
+                <button class="box"></button>
+                <button class="box"></button>
+                <button class="box"></button>
+                <button class="box"></button>
+                <button class="box"></button>
+                <button class="box"></button>
+            </div>
+            <button id="reset-btn">Reset Game</button>
+        </div>
 
-    let row = Math.floor(index / 3);
-    let col = index % 3;
+        <div class="info-panel">
+            <h2>Game Info</h2>
+            <div class="player-info">
+                <div class="player-card" id="player-x-card">
+                    <span class="name" id="player-x-name">You</span>
+                    <span class="symbol">X</span>
+                </div>
+                <div class="player-card" id="player-o-card">
+                    <span class="name" id="player-o-name">AI</span>
+                    <span class="symbol">O</span>
+                </div>
+            </div>
+            <div class="turn-indicator" id="turn-indicator">
+                Waiting to start...
+            </div>
+        </div>
+    </div>
 
-    totalCount++;
+    <script src="app.js"></script>
+</body>
 
-    player.row[row]++;
-    player.col[col]++;
-
-    if (row === col) player.diag++;
-    if (row + col === 2) player.antiDiag++;
-
-    return (
-        player.row[row] === 3 ||
-        player.col[col] === 3 ||
-        player.diag === 3 ||
-        player.antiDiag === 3
-    );
-}
-
-function getWinner(state) {
-    const wins = [
-        [0, 1, 2], [3, 4, 5], [6, 7, 8], // rows
-        [0, 3, 6], [1, 4, 7], [2, 5, 8], // cols
-        [0, 4, 8], [2, 4, 6]             // diagonals
-    ];
-
-    for (const [a, b, c] of wins) {
-        if (state[a] && state[a] === state[b] && state[b] === state[c]) {
-            return { player: state[a] };
-        }
-    }
-
-    if (state.every(v => v !== null)) return { player: "draw" };
-
-    return null;
-}
-
-function minMax(state, player, depth = 0) {
-    const winner = getWinner(state);
-
-    if (winner) {
-        if (winner.player === ai) return { score: 1 };
-        if (winner.player === human) return { score: - 1 };
-        return { score: 0 }; // draw
-    }
-
-    const avail = state
-        .map((v, i) => (v ? null : i))
-        .filter(v => v !== null);
-
-    let moves = [];
-
-    for (const i of avail) {
-        let newState = state.slice();
-        newState[i] = player;
-
-        const result = minMax(
-            newState,
-            player === "X" ? "O" : "X",
-            depth + 1
-        );
-
-        moves.push({ index: i, score: result.score });
-    }
-
-    if (player === ai) {
-        return moves.reduce((best, m) => (m.score > best.score ? m : best));
-    } else {
-        return moves.reduce((best, m) => (m.score < best.score ? m : best));
-    }
-}
-
-function aiPlay() {
-    if (gameOver) return;
-
-    let best = minMax(board, ai, 0);
-    let index = best.index;
-
-    board[index] = ai;
-    boxes[index].innerText = ai;
-    boxes[index].disabled = true;
-
-    let win = makeMove(ai, index);
-    if (win) {
-        setTimeout(() => alert("AI (O) WINS!"), 50);
-        gameOver = true;
-        return;
-    }
-
-    if (totalCount === 9) {
-        alert("DRAW!");
-        gameOver = true;
-        return;
-    }
-
-    turnX = true; // back to human
-}
-
-// ✅ Human plays
-boxes.forEach((box, index) => {
-    box.addEventListener("click", () => {
-        if (gameOver || !turnX || board[index] !== null) return;
-
-        board[index] = human;
-        box.innerText = human;
-        box.disabled = true;
-
-        let win = makeMove(human, index);
-
-        if (win) {
-            setTimeout(() => alert("You (X) WIN!"), 50);
-            gameOver = true;
-            return;
-        }
-
-        if (totalCount === 9) {
-            setTimeout(() => alert("DRAW!"), 50);
-            gameOver = true;
-            return;
-        }
-
-        turnX = false;
-
-        // ✅ AI plays after slight delay
-        setTimeout(aiPlay, 300);
-    });
-});
-
-// ✅ Reset everything
-resetBtn.addEventListener("click", () => {
-    boxes.forEach(box => {
-        box.innerText = "";
-        box.disabled = false;
-    });
-
-    board = Array(9).fill(null);
-    totalCount = 0;
-    turnX = true;
-    gameOver = false;
-
-    X = { row: [0, 0, 0], col: [0, 0, 0], diag: 0, antiDiag: 0 };
-    O = { row: [0, 0, 0], col: [0, 0, 0], diag: 0, antiDiag: 0 };
-});
+</html>
